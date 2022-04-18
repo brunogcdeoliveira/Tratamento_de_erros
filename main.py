@@ -1,4 +1,5 @@
-from exception import SaldoInsuficienteError
+from exceptions import SaldoInsuficienteError, OperacaoFinanceiraError
+from leitor import LeitorDeArquivo
 
 
 class Cliente:
@@ -6,18 +7,6 @@ class Cliente:
         self.nome = nome
         self.cpf = cpf
         self.profissao = profissao
-
-
-cliente = Cliente('John Doe', '123.456.789-00', 'Desenvolvedor')
-
-
-# print(cliente.nome)
-# print(cliente.cpf)
-# print(cliente.profissao)
-#
-# # Posso acrescentar um atributo na classe por meio da atribuição de valor
-# cliente.idade = 23
-# print(cliente.idade)
 
 
 class ContaCorrente:
@@ -28,55 +17,65 @@ class ContaCorrente:
         self.__saldo = 100
         self.__agencia = 0
         self.__numero = 0
-
+        self.saques_nao_permitidos = 0
+        self.transferencias_nao_permitidas = 0
         self.cliente = cliente
         self.__set_agencia(agencia)
         self.__set_numero(numero)
-        # ZeroDivisionError
-        # ContaCorrente.taxa_operacao = ContaCorrente.total_contas_criadas/30
         ContaCorrente.total_contas_criadas += 1
-        ContaCorrente.taxa_operacao = ContaCorrente.total_contas_criadas / 30
+        ContaCorrente.taxa_operacao = 30 / ContaCorrente.total_contas_criadas
 
-    # Getters e Setters
     @property
     def agencia(self):
         return self.__agencia
 
-    def __set_agencia(self, valor):
-        if not isinstance(valor, int):
-            raise ValueError("Agênca não é um inteiro", valor)
-        if valor <= 0:
-            raise ValueError("Agênca menor ou igual a 0")
-        self.__agencia = valor
+    def __set_agencia(self, value):
+        if not isinstance(value, int):
+            raise ValueError("O atributo agencia deve ser um inteiro", value)
+        if value <= 0:
+            raise ValueError("O atributo agencia deve ser maior que zero")
+
+        self.__agencia = value
 
     @property
     def numero(self):
         return self.__numero
 
-    def __set_numero(self, valor):
-        if not isinstance(valor, int):
-            raise ValueError("Numero da conta não é um inteiro")
-        if valor <= 0:
-            raise ValueError("Numero da conta menor ou igual a 0")
-        self.__numero = valor
+    def __set_numero(self, value):
+        if not isinstance(value, int):
+            raise ValueError("O atributo número deve ser um inteiro")
+        if value <= 0:
+            raise ValueError("O atributo número  deve ser maior que zero")
+        self.__numero = value
 
     @property
     def saldo(self):
         return self.__saldo
 
     @saldo.setter
-    def saldo(self, valor):
-        if not isinstance(valor, int):
-            raise ValueError("Saldo da conta não é um inteiro")
-        self.__saldo = valor
+    def saldo(self, value):
+        if not isinstance(value, int):
+            raise ValueError("O atributo saldo deve ser um inteiro")
 
-    # Outros métodos
+        self.__saldo = value
+
     def transferir(self, valor, favorecido):
+        if valor < 0:
+            raise ValueError("O valor a ser depositado não pode ser menor que zero")
+        try:
+            self.sacar(valor)
+        except SaldoInsuficienteError as E:
+            self.transferencias_nao_permitidas += 1
+            E.args = ()
+            raise OperacaoFinanceiraError("Operação não finalizada") from E
         favorecido.depositar(valor)
 
     def sacar(self, valor):
+        if valor < 0:
+            raise ValueError("O valor a ser sacado não pode ser menor que zero")
         if (self.saldo < valor):
-            raise SaldoInsuficienteError('Saldo insuficiente')
+            self.saques_nao_permitidos += 1
+            raise SaldoInsuficienteError("", saldo=self.saldo, valor=valor)
         self.saldo -= valor
 
     def depositar(self, valor):
@@ -87,31 +86,33 @@ def main():
     import sys
 
     contas = []
-    cont = 0
-    while True :
+    while (True):
         try:
-            nome = input('Nome do cliente: \n')
-            agencia = (input('Número da agencia: \n'))
-            numero = (input('Número da conta: \n'))
+            nome = input("Nome do cliente: \n")
+            agencia = input("Número da agência: \n")
+            breakpoint()
+            numero = input("Número da conta corrente: \n")
+
             cliente = Cliente(nome, None, None)
-
             conta_corrente = ContaCorrente(cliente, agencia, numero)
-            contas.append(conta_corrente)
-
-        except ValueError as E:
-            print(E.args)
-            sys.exit()
+            contas.append = conta_corrente
         except KeyboardInterrupt:
-            print(f'\n\n{len(contas)}(s) contas criadas')
+            print(f"\n\n {len(contas)} conta(s) criadas")
             sys.exit()
 
 
-# if __name__ == '__main__':
-#     main()
+# if __name__ == "__main__":
+#    main()
 
+# conta_corrente1 = ContaCorrente(None, 400, 1234567)
+# conta_corrente2 = ContaCorrente(None, 401, 1234568)
+# try:
+#     conta_corrente1.sacar(1000)
+#     print("Conta Corrente1 Saldo: ",conta_corrente1.saldo)
+#     print("Conta Corrente2 Saldo: ",conta_corrente2 .saldo)
+# except OperacaoFinanceiraError as E:
+#     breakpoint()
+#     pass
 
-conta_corrente = ContaCorrente(None, 400, 1123456)
-# conta_corrente.depositar(-100)
-# print(f'Saldo: {conta_corrente.saldo}')
-conta_corrente.sacar(101)
-print(f'Saldo: {conta_corrente.saldo}')
+with LeitorDeArquivo("arquivo.txt") as leitor:
+    leitor.ler_proxima_linha()

@@ -1,3 +1,0 @@
-class SaldoInsuficienteError(Exception):
-    pass
-
